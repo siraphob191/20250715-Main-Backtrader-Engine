@@ -7,7 +7,6 @@ backtrader = pytest.importorskip('backtrader')
 
 import src.config as config
 import src.run_backtest as run_backtest
-import src.strategy.trend_filter as market_trend_filter
 import src.strategy.config as strategy_config
 
 
@@ -83,7 +82,6 @@ def test_run_backtest_main(tmp_path, monkeypatch):
     monkeypatch.setattr(config, 'INITIAL_CASH', 100000)
     monkeypatch.setattr(config, 'COMMISSION_PCT', 0.0)
     monkeypatch.setattr(config, 'SLIPPAGE_PCT', 0.00015)
-    monkeypatch.setattr(market_trend_filter.plt, 'show', lambda: None)
 
     captured = {}
     orig_init = run_backtest.SVDMomentumStrategy.__init__
@@ -91,8 +89,6 @@ def test_run_backtest_main(tmp_path, monkeypatch):
     def spy_init(self, *args, **kwargs):
         orig_init(self, *args, **kwargs)
         captured['mapping'] = self.sp500_by_date
-        captured['outside'] = run_backtest.strategy.core.outside_bounds_dates
-        captured['trend'] = run_backtest.strategy.core.short_ma_under_long_ma_dates
 
     monkeypatch.setattr(run_backtest.SVDMomentumStrategy, '__init__', spy_init)
 
@@ -101,13 +97,6 @@ def test_run_backtest_main(tmp_path, monkeypatch):
     assert isinstance(run_backtest.strategy.sp500_by_date, dict)
     assert dt.date(2020, 1, 1) in run_backtest.strategy.sp500_by_date
     assert captured.get('mapping') is run_backtest.strategy.sp500_by_date
-    assert isinstance(run_backtest.strategy.core.outside_bounds_dates, list)
-    assert isinstance(run_backtest.strategy.core.short_ma_under_long_ma_dates, list)
-    assert captured.get('outside') is run_backtest.strategy.core.outside_bounds_dates
-    assert (
-        captured.get('trend')
-        is run_backtest.strategy.core.short_ma_under_long_ma_dates
-    )
 
 
 def test_pyfolio_positions_include_all_tickers(tmp_path, monkeypatch):
@@ -139,23 +128,22 @@ def test_pyfolio_positions_include_all_tickers(tmp_path, monkeypatch):
     monkeypatch.setattr(config, 'INITIAL_CASH', 100000)
     monkeypatch.setattr(config, 'COMMISSION_PCT', 0.0)
     monkeypatch.setattr(config, 'SLIPPAGE_PCT', 0.00015)
-    monkeypatch.setattr(market_trend_filter.plt, 'show', lambda: None)
 
     captured = {}
 
     def capture_report(df_portfolio, df_benchmark, df_transactions, strat):
         pyf = strat.analyzers.getbyname('pyfolio')
         _, positions, _, _ = pyf.get_pf_items()
-        captured['positions'] = positions
+        captured['columns'] = list(positions.columns)
 
     monkeypatch.setattr(run_backtest, 'generate_report', capture_report)
 
     run_backtest.main()
 
-    positions = captured.get('positions')
-    assert positions is not None
-    assert 'AAPL' in positions.columns
-    assert 'MSFT' in positions.columns
+    columns = captured.get('columns')
+    assert columns is not None
+    expected = {'AAPL', 'MSFT', '^SP500TR', 'cash'}
+    assert expected.issubset(set(columns))
 
 
 def test_pyfolio_analyzer_tracks_portfolio(tmp_path, monkeypatch):
@@ -187,7 +175,6 @@ def test_pyfolio_analyzer_tracks_portfolio(tmp_path, monkeypatch):
     monkeypatch.setattr(config, 'INITIAL_CASH', 100000)
     monkeypatch.setattr(config, 'COMMISSION_PCT', 0.0)
     monkeypatch.setattr(config, 'SLIPPAGE_PCT', 0.00015)
-    monkeypatch.setattr(market_trend_filter.plt, 'show', lambda: None)
 
     captured = {}
 
@@ -204,3 +191,48 @@ def test_pyfolio_analyzer_tracks_portfolio(tmp_path, monkeypatch):
 
     params = captured.get('params', {})
     assert params == {}
+
+
+def test_portfolio_analyzer_returns_data(tmp_path, monkeypatch):
+    """PortfolioAnalyzer should produce a non-empty dataframe."""
+
+    etf_dir, stock_dir, bench_dir = _setup_files(tmp_path)
+
+    monkeypatch.setattr(config, 'etf_data_path', etf_dir)
+    monkeypatch.setattr(config, 'stock_data_path', stock_dir)
+    monkeypatch.setattr(config, 'benchmark_data_path', bench_dir)
+    monkeypatch.setattr(strategy_config, 'MARKET_DATA_PATH', bench_dir)
+    monkeypatch.setattr(
+        config,
+        'sector_library_path',
+        os.path.join(str(tmp_path), 'Sector Library.csv'),
+    )
+    monkeypatch.setattr(
+        config,
+        'sp500_constituents_path',
+        os.path.join(str(tmp_path), '20220402 S&P 500 Constituents Symbols.csv'),
+    )
+    monkeypatch.setattr(
+        config,
+        'stock_list_path',
+        os.path.join(str(tmp_path), 'List of Tickers Updated with Sectors.csv'),
+    )
+    monkeypatch.setattr(config, 'BACKTEST_START_DATE', dt.datetime(2020, 1, 1))
+    monkeypatch.setattr(config, 'BACKTEST_END_DATE', dt.datetime(2020, 9, 16))
+    monkeypatch.setattr(config, 'INITIAL_CASH', 100000)
+    monkeypatch.setattr(config, 'COMMISSION_PCT', 0.0)
+    monkeypatch.setattr(config, 'SLIPPAGE_PCT', 0.00015)
+
+    captured = {}
+
+    def capture_report(df_portfolio, df_benchmark, df_transactions, strat):
+        captured['df'] = df_portfolio
+
+    monkeypatch.setattr(run_backtest, 'generate_report', capture_report)
+
+    run_backtest.main()
+
+    df = captured.get('df')
+    assert isinstance(df, pandas.DataFrame)
+    assert not df.empty
+    assert 'portfolio_value' in df.columns
