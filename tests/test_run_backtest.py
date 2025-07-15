@@ -78,7 +78,7 @@ def test_run_backtest_main(tmp_path, monkeypatch):
     monkeypatch.setattr(market_trend_filter.plt, 'show', lambda: None)
 
     captured = {}
-    orig_init = run_backtest.TestStrategy.__init__
+    orig_init = run_backtest.SVDMomentumStrategy.__init__
 
     def spy_init(self, *args, **kwargs):
         orig_init(self, *args, **kwargs)
@@ -86,7 +86,7 @@ def test_run_backtest_main(tmp_path, monkeypatch):
         captured['outside'] = run_backtest.strategy.core.outside_bounds_dates
         captured['trend'] = run_backtest.strategy.core.short_ma_under_long_ma_dates
 
-    monkeypatch.setattr(run_backtest.TestStrategy, '__init__', spy_init)
+    monkeypatch.setattr(run_backtest.SVDMomentumStrategy, '__init__', spy_init)
 
     run_backtest.main()
 

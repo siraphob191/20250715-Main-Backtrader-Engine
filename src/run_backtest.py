@@ -1,8 +1,8 @@
 """Backtrader entry point used by the tests.
 
 This script loads CSV data for ETFs, stocks and benchmark, sets up the
-``TestStrategy`` with the required libraries and then runs a single backtest
-session.  Results are printed to the console.
+``SVDMomentumStrategy`` with the required libraries and then runs a single
+backtest session. Results are printed to the console.
 """
 
 import backtrader as bt
@@ -18,7 +18,7 @@ from data.loader import load_etf_feeds, load_stock_feeds, load_benchmark_data
 from data.sector import load_sector_library, load_stock_list
 from data.sp500 import load_sp500_by_date
 import strategy
-from strategy import TestStrategy
+from strategy import SVDMomentumStrategy
 from utils.trade_utils import PortfolioAnalyzer, TransactionTracker
 from utils.data_utils import prepare_benchmark_dataframe
 from utils.reporting import (
@@ -30,7 +30,7 @@ from utils.report_io import generate_report
 
 
 def main():
-    """Run a single backtest using the :class:`TestStrategy` class.
+    """Run a single backtest using the :class:`SVDMomentumStrategy` class.
 
     The function loads CSV price data, prepares sector and stock mappings and
     configures the Backtrader engine.  After running the simulation it prints
@@ -115,7 +115,7 @@ def main():
     cerebro = bt.Cerebro()
     for data in data_feeds:
         cerebro.adddata(data)
-    cerebro.addstrategy(TestStrategy)
+    cerebro.addstrategy(SVDMomentumStrategy)
     cerebro.broker.set_cash(initial_cash)
     cerebro.broker.setcommission(commission=commission_pct)
     cerebro.broker.set_slippage_perc(slippage_pct, slip_open=True, slip_limit=True, slip_match=True, slip_out=True)
