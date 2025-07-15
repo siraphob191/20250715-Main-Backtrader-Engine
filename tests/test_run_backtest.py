@@ -26,36 +26,44 @@ def _price_df(dates):
     })
 
 
+from pathlib import Path
+
+
 def _setup_files(tmpdir):
     """Create temporary CSV files expected by ``run_backtest``."""
     dates = pandas.date_range('2020-01-01', periods=260)
 
-    etf_dir = tmpdir.mkdir('etf')
+    base = Path(str(tmpdir))
+
+    etf_dir = base / 'etf'
+    etf_dir.mkdir()
     for ticker in ['XLY', 'XLE', 'XLF', 'XLV', 'XLI', 'XLK', 'XLB', 'XLP', 'XLU', 'XLRE', 'XLC']:
-        _price_df(dates).to_csv(etf_dir.join(ticker + '.csv'), index=False)
+        _price_df(dates).to_csv(etf_dir / f'{ticker}.csv', index=False)
 
-    stock_dir = tmpdir.mkdir('stocks')
+    stock_dir = base / 'stocks'
+    stock_dir.mkdir()
     for ticker in ['AAPL', 'MSFT']:
-        _price_df(dates).to_csv(stock_dir.join(ticker + '.csv'), index=False)
+        _price_df(dates).to_csv(stock_dir / f'{ticker}.csv', index=False)
 
-    bench_dir = tmpdir.mkdir('benchmark')
-    _price_df(dates).to_csv(bench_dir.join('^SP500TR.csv'), index=False)
+    bench_dir = base / 'benchmark'
+    bench_dir.mkdir()
+    _price_df(dates).to_csv(bench_dir / '^SP500TR.csv', index=False)
 
     pandas.DataFrame({
         'Ticker': ['XLY', 'XLE', 'XLF', 'XLV', 'XLI', 'XLK', 'XLB', 'XLP', 'XLU', 'XLRE', 'XLC'],
-        'Sector': ['Sector{}'.format(i) for i in range(11)]
-    }).to_csv(tmpdir.join('Sector Library.csv'), index=False)
+        'Sector': [f'Sector{i}' for i in range(11)]
+    }).to_csv(base / 'Sector Library.csv', index=False)
 
     pandas.DataFrame({
         '0': pandas.to_datetime(['2020-01-01', '2020-01-02']),
         'AAPL': ['AAPL', 'AAPL'],
         'MSFT': ['MSFT', 'MSFT']
-    }).to_csv(tmpdir.join('20220402 S&P 500 Constituents Symbols.csv'), index=False)
+    }).to_csv(base / '20220402 S&P 500 Constituents Symbols.csv', index=False)
 
     pandas.DataFrame({
         'Custom_Code': ['AAPL', 'MSFT'],
         'GICS Sector': ['Sector0', 'Sector0']
-    }).to_csv(tmpdir.join('List of Tickers Updated with Sectors.csv'), index=False)
+    }).to_csv(base / 'List of Tickers Updated with Sectors.csv', index=False)
 
     return str(etf_dir), str(stock_dir), str(bench_dir)
 

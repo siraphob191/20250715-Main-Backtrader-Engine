@@ -1,7 +1,7 @@
 import os
 import backtrader as bt
 
-import config
+from .. import config
 
 
 def load_etf_feeds(tickers, start_date, end_date, path=None):

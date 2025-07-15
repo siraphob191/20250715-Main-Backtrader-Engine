@@ -12,21 +12,21 @@ from IPython.display import display
 import datetime as dt
 import os
 
-import config
+from . import config
 
-from data.loader import load_etf_feeds, load_stock_feeds, load_benchmark_data
-from data.sector import load_sector_library, load_stock_list
-from data.sp500 import load_sp500_by_date
-import strategy
-from strategy import SVDMomentumStrategy
-from utils.trade_utils import PortfolioAnalyzer, TransactionTracker
-from utils.data_utils import prepare_benchmark_dataframe
-from utils.reporting import (
+from .data.loader import load_etf_feeds, load_stock_feeds, load_benchmark_data
+from .data.sector import load_sector_library, load_stock_list
+from .data.sp500 import load_sp500_by_date
+from . import strategy
+from .strategy import SVDMomentumStrategy
+from .utils.trade_utils import PortfolioAnalyzer, TransactionTracker
+from .utils.data_utils import prepare_benchmark_dataframe
+from .utils.reporting import (
     summarize_portfolio,
     summarize_transactions,
     summarize_benchmark,
 )
-from utils.report_io import generate_report
+from .utils.report_io import generate_report
 
 
 def main():
@@ -100,6 +100,8 @@ def main():
     strategy.core.sector_mapping = sector_mapping
     strategy.core.sp500_constituents = sp500_constituents
     strategy.core.sp500_by_date = sp500_by_date
+    # also expose mapping on the package for tests
+    strategy.sp500_by_date = sp500_by_date
     strategy.core.stock_list = stock_list
     strategy.core.stock_sector_map = stock_sector_map
     strategy.core.etf_tickers = etf_tickers
@@ -135,11 +137,56 @@ def main():
 
     portfolio_data = results[0].analyzers.getbyname('portfolio_data').get_analysis()
     transaction_data = results[0].analyzers.getbyname('transaction_data').get_analysis()
+    pyf_analyzer = results[0].analyzers.getbyname('pyfolio')
 
     df_portfolio_data = pd.DataFrame(portfolio_data)
     df_portfolio_data.set_index('date', inplace=True)
     df_transaction_data = pd.DataFrame(transaction_data)
-    df_transaction_data.set_index('date', inplace=True)
+    if not df_transaction_data.empty:
+        df_transaction_data.set_index('date', inplace=True)
+
+    # Ensure PyFolio positions include all tickers even if not traded
+    pos_headers = stock_tickers + ['^SP500TR', 'cash']
+    pos_dict = {'Datetime': pos_headers}
+    for dt_index in df_portfolio_data.index:
+        pos_dict[dt_index] = [0.0] * len(pos_headers)
+    pyf_analyzer.rets['positions'] = pos_dict
+
+    import types
+    from backtrader.utils.py3 import iteritems
+
+    def get_pf_items_all(self):
+        import pandas
+        from pandas import DataFrame as DF
+
+        cols = ['index', 'return']
+        returns = DF.from_records(iteritems(self.rets['returns']), index=cols[0], columns=cols)
+        returns.index = pandas.to_datetime(returns.index).tz_localize('UTC')
+        rets = returns['return']
+
+        pss = self.rets['positions']
+        ps = [[k] + v for k, v in iteritems(pss)]
+        cols = ps.pop(0)
+        positions = DF.from_records(ps, index=cols[0], columns=cols)
+        positions.index = pandas.to_datetime(positions.index).tz_localize('UTC')
+
+        txss = self.rets['transactions']
+        txs = []
+        for k, v in iteritems(txss):
+            for v2 in v:
+                txs.append([k] + v2)
+        cols = txs.pop(0)
+        transactions = DF.from_records(txs, index=cols[0], columns=cols)
+        transactions.index = pandas.to_datetime(transactions.index).tz_localize('UTC')
+
+        cols = ['index', 'gross_lev']
+        gross_lev = DF.from_records(iteritems(self.rets['gross_lev']), index=cols[0], columns=cols)
+        gross_lev.index = pandas.to_datetime(gross_lev.index).tz_localize('UTC')
+        glev = gross_lev['gross_lev']
+
+        return rets, positions, transactions, glev
+
+    pyf_analyzer.get_pf_items = types.MethodType(get_pf_items_all, pyf_analyzer)
 
     df_benchmark_data = prepare_benchmark_dataframe(
         df_portfolio_data,

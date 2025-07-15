@@ -1,4 +1,4 @@
-import config
+from .. import config
 
 
 def load_sp500_by_date(path=None):
@@ -21,7 +21,20 @@ def load_sp500_by_date(path=None):
 
     df = pd.read_csv(path, parse_dates=[0])
     df[df.columns[0]] = df[df.columns[0]].dt.date
-    return {
-        date: set(df.iloc[i, 1:].dropna().tolist())
-        for i, date in enumerate(df[df.columns[0]])
-    }
+
+    date_col = df.columns[0]
+    mapping = {}
+    current = None
+    start = df[date_col].min()
+    end = config.BACKTEST_END_DATE.date()
+    all_dates = pd.date_range(start, end)
+
+    rows = {row[date_col]: set(row[1:].dropna().tolist()) for _, row in df.iterrows()}
+
+    for dt_ in all_dates:
+        date = dt_.date()
+        if date in rows:
+            current = rows[date]
+        mapping[date] = current or set()
+
+    return mapping

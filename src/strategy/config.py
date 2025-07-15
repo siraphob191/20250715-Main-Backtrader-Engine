@@ -1,38 +1,25 @@
 class StrategyConfig(object):
-    """Default parameters for the trading strategy."""
+    """Parameters for the :class:`SVDMomentumStrategy`."""
 
     def __init__(
         self,
-        rebalance_freq=60,
-        init_rebalance_count=58,
-        sharpe_period_short=63,
-        sharpe_period_medium=126,
-        sharpe_period_long=252,
-        max_no_of_sectors=4,
-        max_sector_weight=1,
-        qualify_pct=0.1,
-        max_stock_weight=1,
-        min_no_of_stocks=3,
-        asset_short_sma_period=1,
-        asset_long_sma_period=200,
+        rebalance_freq=21,
+        num_factors=50,
+        max_stock_weight=0.05,
+        turnover_limit=1.0,
     ):
-        # Rebalance parameters
+        # How often the portfolio is rebalanced (trading days)
         self.rebalance_freq = rebalance_freq
-        self.init_rebalance_count = init_rebalance_count
 
-        # Momentum Score Parameters
-        self.sharpe_period_short = sharpe_period_short
-        self.sharpe_period_medium = sharpe_period_medium
-        self.sharpe_period_long = sharpe_period_long
+        # Number of principal components to keep when estimating the
+        # covariance matrix using singular value decomposition
+        self.num_factors = num_factors
 
-        # Asset Allocation
-        self.max_no_of_sectors = max_no_of_sectors
-        self.max_sector_weight = max_sector_weight
-        self.qualify_pct = qualify_pct
+        # Maximum weight per stock in the portfolio
         self.max_stock_weight = max_stock_weight
-        self.min_no_of_stocks = min_no_of_stocks
-        self.asset_short_sma_period = asset_short_sma_period
-        self.asset_long_sma_period = asset_long_sma_period
+
+        # Limit on portfolio turnover at each rebalance
+        self.turnover_limit = turnover_limit
 
 
 # Instance used by strategy classes
@@ -48,5 +35,5 @@ MARKET_DATA_PATH = (
 )
 
 # Ticker symbol used for the market benchmark
-import config
+from .. import config
 BENCHMARK_SYMBOL = config.BENCHMARK_SYMBOL

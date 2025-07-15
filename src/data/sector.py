@@ -1,5 +1,5 @@
 import pandas as pd
-import config
+from .. import config
 
 
 def load_sector_library(path=None):
