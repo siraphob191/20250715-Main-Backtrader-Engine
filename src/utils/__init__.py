@@ -14,6 +14,7 @@ from .reporting import (
     summarize_benchmark,
 )
 from .report_io import generate_report, _visualize_results
+from .svd_model import prepare_returns, compute_factor_model, tangent_portfolio
 
 __all__ = [
     'prepare_benchmark_dataframe',
@@ -29,4 +30,7 @@ __all__ = [
     'summarize_benchmark',
     'generate_report',
     '_visualize_results',
+    'prepare_returns',
+    'compute_factor_model',
+    'tangent_portfolio',
 ]
