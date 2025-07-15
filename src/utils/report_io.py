@@ -17,7 +17,7 @@ except Exception:  # pragma: no cover - optional dependency
 
 import pandas as pd
 
-import config
+from .. import config
 
 
 def _visualize_results(df_portfolio_data, df_benchmark_data, strat):

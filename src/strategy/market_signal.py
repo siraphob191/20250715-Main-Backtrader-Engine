@@ -1,13 +1,16 @@
 import os
 import pandas as pd
 
-from .config import MARKET_DATA_PATH, BENCHMARK_SYMBOL
+from . import config as strategy_config
 from .trend_filter import market_trend_filter
 
 
 def _load_spx_data():
     """Load the S&P500 Total Return index from ``MARKET_DATA_PATH``."""
-    file_path = os.path.join(MARKET_DATA_PATH, "{}.csv".format(BENCHMARK_SYMBOL))
+    file_path = os.path.join(
+        strategy_config.MARKET_DATA_PATH,
+        f"{strategy_config.BENCHMARK_SYMBOL}.csv",
+    )
     return pd.read_csv(file_path, parse_dates=['Date'], index_col='Date')
 
 

@@ -47,6 +47,17 @@ def summarize_portfolio(df):
 
 def summarize_transactions(df):
     """Return statistics describing executed trades."""
+    if df.empty:
+        return pd.DataFrame({
+            'Total Trades': [0],
+            'Average Trade Size': [0],
+            'Total Commissions Paid': [0],
+            'Profitable Trades': [0],
+            'Profitable Trades %': [0.0],
+            'Loss Trades': [0],
+            'Loss Trades %': [0.0],
+        })
+
     total_trades = df.shape[0]
     average_trade_size = df['size'].abs().mean()
     total_commissions_paid = df['commission'].sum()

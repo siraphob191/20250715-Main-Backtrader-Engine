@@ -2,10 +2,10 @@ import backtrader as bt
 import numpy as np
 import pandas as pd
 import datetime as dt
-import config
+from .. import config
 
 from .market_signal import get_market_signals
-from utils.trade_utils import update_allocation
+from ..utils.trade_utils import update_allocation
 
 # Global variables populated by ``run_backtest``
 sp500_by_date = {}
@@ -24,7 +24,7 @@ class SVDMomentumStrategy(bt.Strategy):
     """Long-only momentum portfolio using an SVD-based covariance model."""
 
     params = dict(
-        rebalance_freq=21,
+        rebalance_freq=1,
         num_factors=50,
         max_stock_weight=0.05,
         turnover_limit=1.0,
