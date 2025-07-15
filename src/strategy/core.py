@@ -47,19 +47,24 @@ class SVDMomentumStrategy(bt.Strategy):
         self.short_ma_under_long_ma_dates = short_ma_under_long_ma_dates
 
         self.stock_datas = [d for d in self.datas if d._name in stock_tickers]
+        self.d_with_len = []  # Data feeds with enough history
 
     def prenext(self):
-        """Wait until all stocks have enough history before trading."""
-        if all(len(d) >= 252 for d in self.stock_datas):
+        """Start trading once at least one stock has enough history."""
+        self.d_with_len = [d for d in self.stock_datas if len(d) >= 252]
+        if self.d_with_len:
             self.next()
 
     def nextstart(self):
-        """Called once when all datas fulfill length requirements."""
-        self.next()
+        """Called once when enough history is available."""
+        self.d_with_len = [d for d in self.stock_datas if len(d) >= 252]
+        if self.d_with_len:
+            self.next()
 
     def next(self):
-        # Skip until all stocks have at least 252 days of history
-        if any(len(d) < 252 for d in self.stock_datas):
+        # Skip until at least one stock has 252 days of history
+        self.d_with_len = [d for d in self.stock_datas if len(d) >= 252]
+        if not self.d_with_len:
             return
 
         current_date = self.datas[0].datetime.date(0)
@@ -79,7 +84,7 @@ class SVDMomentumStrategy(bt.Strategy):
     # ------------------------------------------------------------------
     def _compute_target_weights(self, current_date):
         active = set(self.sp500_by_date.get(current_date, set()))
-        stock_feeds = [d for d in self.stock_datas if d._name in active and len(d) >= 253]
+        stock_feeds = [d for d in self.d_with_len if d._name in active and len(d) >= 253]
         if not stock_feeds:
             return
 
