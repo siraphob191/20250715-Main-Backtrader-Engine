@@ -6,7 +6,7 @@ This guide walks through setting up a small environment to run the example noteb
 
 ```bash
 git clone <repository-url>
-cd 20250627-Momentum4-6-Refactor
+cd 20250715-Main-Backtrader-Engine
 ```
 
 ## 2. Create a Conda environment
