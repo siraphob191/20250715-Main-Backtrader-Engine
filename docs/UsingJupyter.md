@@ -20,7 +20,7 @@ conda activate momentum46
 
 ## 3. Install dependencies
 
-Install the packages required by the project and the notebook interface. Optionally install the project itself in editable mode so modules can be imported from `src`.
+Install the packages required by the project and the notebook interface. The project should be installed in editable mode so the `src` package can be imported without manually editing `sys.path`.
 
 ```bash
 pip install -r requirements.txt
@@ -36,4 +36,4 @@ Start Jupyter and open the example notebook in the `examples/` folder:
 jupyter notebook
 ```
 
-In the browser that appears, open `examples/RunBacktest.ipynb`. Edit the paths in the first code cell so they point to your local CSV price data. Execute each cell in turn to run the backtest and view the resulting summary tables.
+In the browser that appears, open `examples/RunBacktest.ipynb`. The first code cell imports `src.config` and defines the CSV paths—update those variables to point to your local data. Then run the remaining cells to execute the backtest and view the resulting summary tables.  No manual `sys.path` modification is required.
