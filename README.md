@@ -54,11 +54,27 @@ pip install -e .
 
 In a Jupyter Notebook:
 
+First install the project in editable mode so the `src` package is available:
+
+```bash
+pip install -e .
+```
+
+Run the backtest from the command line:
+
+```bash
+python -m src.run_backtest
+```
+
+Or programmatically:
+
 ```python
-import sys
-sys.path.append("src")
-from run_backtest import main
-main(config=...)
+import src.config as config
+import src.run_backtest as run_backtest
+
+# override configuration options here
+config.BACKTEST_START_DATE = ...
+run_backtest.main()
 ```
 
 Command-line entry points may be added later to run the momentum backtest directly from the shell.
